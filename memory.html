@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Memory Game</title>
+    <link href="memory.css" rel="stylesheet" type="text/css">
+    <script>
+        let allWords = []
+        let wordSet = []
+        let lastWord = ""
+        let lastID = ""
+        let even = ""
+        fetch(`https://gregapis.herokuapp.com/codenames/words`)
+            .then(response => response.json())
+            .then(data => data.forEach(result => allWords.push(result.word)))
+        clickHandler = (event) => {
+            let existingCards = document.querySelectorAll('.card:not(.flipped')
+            for (j = existingCards.length; j--;) {
+                existingCards[j].textContent = ""
+            }
+            document.getElementById(`${event.target.id}`).textContent = `${wordSet[event.target.id]}`
+            if (lastWord === wordSet[event.target.id] && event.target.id !== lastID) {
+                document.getElementById(`${event.target.id}`).classList.add("flipped")
+                document.getElementById(`${lastID}`).classList.add("flipped")
+                document.getElementById(`${lastID}`).textContent=`${wordSet[lastID]}`
+            } else {
+                lastWord = wordSet[event.target.id]
+                lastID = event.target.id
+            }
+            let flipped = document.querySelectorAll(".flipped").length
+            if(flipped===even){
+                alert("You Win!")
+            }
+        }
+        function matchGrid(width, height, columns, rows, theme) {
+            const body = document.getElementById("body")
+            body.className=''
+            const gameBoard = document.getElementById('gameBoard')
+            gameBoard.style.width = width
+            gameBoard.style.height = height
+            gameBoard.style.gridTemplateColumns = `repeat(${columns}, 1fr)`
+            gameBoard.style.gridTemplateRows = `repeat(${rows}, 1fr)`
+            body.classList.add(`${theme}`)
+            even = 2 * Math.floor((columns * rows) / 2)
+            createCards(even)
+        }
+        createCards = (even) => {
+            let existingCards = document.getElementsByClassName("card")
+            for (j = existingCards.length; j--;) {
+                existingCards[j].remove()
+            }
+            wordSet = []
+            for (let step = 0; step < even / 2; step++) {
+                let word = allWords[Math.floor(Math.random() * allWords.length)]
+                wordSet.push(word, word)
+                const index = allWords.indexOf(word);
+                if (index > -1) {
+                    allWords.splice(index, 1);
+                }
+            }
+            wordSet.sort(() => Math.random() - 0.5);
+            let i = 0
+            while (i < even) {
+                let cards = `<div class="card" id=${i} onclick="clickHandler(event)"></div>`
+                gameBoard.innerHTML += cards
+                i++
+            };
+        }
+
+        newGame = (event) => {
+            event.preventDefault()
+            var form = document.getElementById("form")
+            new matchGrid(`${form.elements[0].value}px`, `${form.elements[1].value}px`, form.elements[2].value, form.elements[3].value, form.elements[5].value)
+            closeModal()
+            clearInterval(timer)
+            startTimer(form.elements[4].value * 60)
+        }
+        toggleModal = () => {
+            var modal = document.getElementById("modal");
+            var overlay = document.getElementById("modal-overlay");
+            modal.style.display = "block";
+            overlay.style.display = "block";
+        }
+        closeModal = () => {
+            var modal = document.getElementById("modal");
+            var overlay = document.getElementById("modal-overlay");
+            modal.style.display = "none";
+            overlay.style.display = "none";
+        }
+        var timer
+        startTimer = (timeLimit) => {
+            let display = document.getElementById('display');
+            timer = setInterval(function () {
+                minutes = parseInt(timeLimit / 60, 10);
+                seconds = parseInt(timeLimit % 60, 10);
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+                display.textContent = minutes + ":" + seconds;
+                if (--timeLimit < 0) {
+                    alert("Game Over!")
+                    clearInterval(timer)
+                }
+            }, 1000);
+        }
+    </script>
+</head>
+
+<body id="body">
+    <header>
+        <h1 id="display"> </h1>
+        <h1>Memory</h1>
+        <div><button onClick="toggleModal()">New Game</button></div>
+    </header>
+    <div id="gameBoard">
+    </div>
+    <div>
+        <div class="modal" id="modal">
+            <button class="closeButton" onClick="closeModal()">X</button>
+            <h2 class="modalHeader">New Game</h2>
+            <div class="modalContent">
+                <form onSubmit="newGame(event)" id="form">
+                    <div>
+                        <label for="width">Width (in pixels):</label>
+                        <input type="text" value="800" /><br />
+                        <label for="height">Height (in pixels):</label>
+                        <input type="text" value="800" /><br />
+                        <label for="columns">Columns:</label>
+                        <select>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5" selected>5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select><br />
+                        <label for="rows">Rows:</label>
+                        <select>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5" selected>5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select><br />
+                        <label for="timeLimit">Time Limit:</label>
+                        <input type="text" value="5" /><br />
+                        <label for="theme">Theme:</label>
+                        <select>
+                            <option value="lightMode" selected>Light</option>
+                            <option value="darkMode">Dark</option>
+                        </select><br />
+                    </div>
+                    <input type="submit" value="Create" />
+                </form>
+            </div>
+        </div>
+        <div class="modal-overlay" id="modal-overlay" onClick="closeModal()"></div>
+    </div>
+</body>
+
+</html>
